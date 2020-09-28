@@ -13,6 +13,9 @@ __pycache__/*
 .*.swp
 */.ipynb_checkpoints/*
 .DS_Store
+*.ini
+*.rst
+*.cfg
 
 # Project files
 .ropeproject
@@ -40,6 +43,7 @@ coverage.xml
 build/*
 dist/*
 sdist/*
+docs/*.pdf
 docs/api/*
 docs/_rst/*
 docs/_build/*
