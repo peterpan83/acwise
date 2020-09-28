@@ -16,8 +16,9 @@ Note: This skeleton file can be safely removed if not needed!
 """
 
 import argparse
-import sys
+import sys,os
 import logging
+import configparser
 
 from ac4icw import __version__
 
@@ -25,23 +26,29 @@ __author__ = "panyq"
 __copyright__ = "panyq"
 __license__ = "mit"
 
-_logger = logging.getLogger(__name__)
+_logger = logging.getLogger("AC COMMAND LINE")
+
+from ac4icw.main import build_ac
 
 
-def fib(n):
-    """Fibonacci example function
+def get_dict(config:configparser.ConfigParser):
+    '''
+    convert ConfigParser to dict
+    :param config:
+    :return:
+    '''
+    sections_dict = {}
+    sections = config.sections()
+    for section in sections:
+        options = config.options(section)
+        temp_dict = {}
+        for option in options:
+            value = None if str.upper(config.get(section,option)) == 'NONE' else config.get(section,option)
+            temp_dict[str.upper(option)] = value
 
-    Args:
-      n (int): integer
+        sections_dict[str.upper(section)] = temp_dict
 
-    Returns:
-      int: n-th Fibonacci number
-    """
-    assert n > 0
-    a, b = 1, 1
-    for i in range(n-1):
-        a, b = b, a+b
-    return a
+    return sections_dict
 
 
 def parse_args(args):
@@ -53,17 +60,13 @@ def parse_args(args):
     Returns:
       :obj:`argparse.Namespace`: command line parameters namespace
     """
-    parser = argparse.ArgumentParser(
-        description="Just a Fibonacci demonstration")
+    parser = argparse.ArgumentParser(prog='ac4icw',
+                                     description="Atmospheric Correction for Inland and Coastal Waters (v2020.0918.01)\n Author:Yanqun Pan (panyq213@163.com))")
     parser.add_argument(
         "--version",
         action="version",
         version="ac4icw {ver}".format(ver=__version__))
-    parser.add_argument(
-        dest="n",
-        help="n-th Fibonacci number",
-        type=int,
-        metavar="INT")
+
     parser.add_argument(
         "-v",
         "--verbose",
@@ -78,6 +81,9 @@ def parse_args(args):
         help="set loglevel to DEBUG",
         action="store_const",
         const=logging.DEBUG)
+
+    parser.add_argument(
+        '-c', '--confg', type=str, help='config file')
     return parser.parse_args(args)
 
 
@@ -100,9 +106,19 @@ def main(args):
     """
     args = parse_args(args)
     setup_logging(args.loglevel)
-    _logger.debug("Starting crazy calculations...")
-    print("The {}-th Fibonacci number is {}".format(args.n, fib(args.n)))
-    _logger.info("Script ends here")
+    _logger.info("Starting AC...")
+
+    config_f = args.confg
+    if config_f is None or not os.path.exists(config_f):
+        print('config file does not exist:{}'.format(config_f))
+        sys.exit()
+    config = configparser.ConfigParser()
+    config.read(config_f)
+
+    config_dict = get_dict(config)
+    atc = build_ac(config_dict)
+    atc.Run()
+
 
 
 def run():
