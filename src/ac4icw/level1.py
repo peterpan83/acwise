@@ -22,7 +22,7 @@ _logger = logging.getLogger("Level 1")
 class Level1_Base():
 
     def __init__(self,acq_time,nrows,ncols,nbands,affine,proj,proj_str,file_dir,file_name,image_name,
-                 sensor,timezone_local_name=None,bandwaves=None):
+                 sensor,data_dir,timezone_local_name=None,bandwaves=None):
         '''
         base classs of level 1 image that is georeferenced.
         :param acq_time:  acquired time , instance of datetime
@@ -36,6 +36,7 @@ class Level1_Base():
         '''
         self.sensor = sensor
         self.file_name,self.file_dir,self.image_name = file_name,file_dir,image_name
+        self.data_dir= data_dir
         self.F0 = {'values':None,'unit':None}
 
         self.acq_time = acq_time #the time when the image was acquired

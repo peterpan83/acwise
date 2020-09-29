@@ -17,15 +17,31 @@ class ExceptionEnviDimensionNotMatch(ExceptionEnviImage):
         self.message +="{}: header {},data {}".format(self.message,str(header_dimension),str(data_dimension))
         super().__init__(self.message)
 
+
+
 class ErrorFlightLine(Exception):
     def __init__(self,message="Initialize FlightLine from WISE files failed,L1A or L1A-GLU header is needed"):
         self.message = message
         super().__init__(self.message)
 
-class ErrorL1WISE(Exception):
+
+
+class ErrorLevel1(Exception):
+    def __init__(self,message="error of level 1 initialization"):
+        self.message = message
+        super().__init__(message)
+
+class ErrorLevel1Config(ErrorLevel1):
+    def __init__(self,message=""):
+        self.message = message
+        super().__init__(message)
+
+class ErrorL1WISE(ErrorLevel1):
     def __init__(self,message='L1WISE initialize failed'):
         self.message = message
         super().__init__(self.message)
+
+
 
 class ErrorRayleigh(Exception):
     def __init__(self,message="Rayleigh error"):

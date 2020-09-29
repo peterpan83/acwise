@@ -46,31 +46,37 @@ class L1_WISE(Level1_Base):
         # NAV_LOG_DIR =
 
         if 'IMAGE_NAME' not in kwargs or 'L1G_DIR' not in kwargs:
-            _logger.error("WISE L1G Header and L1G data are required to initialize Level1 image!")
-            raise ErrorL1WISE()
+            raise ErrorL1WISE("WISE L1G_DIR and IMAGE_NAME are required to initialize Level1 image!")
         l1g_dir,image_name = kwargs['L1G_DIR'],kwargs['IMAGE_NAME']
 
         l1g_hdrf, l1g_dataf = os.path.join(l1g_dir, image_name + '-L1G.pix.hdr'),os.path.join(l1g_dir, image_name + '-L1G.pix')
-
+        if not (os.path.exists(l1g_hdrf) and os.path.exists(l1g_dataf)):
+            raise ErrorL1WISE("WISE L1G Header:{} or {} doesn't exist! ".format(l1g_hdrf,l1g_dataf))
 
         if 'L1A_GLU_DIR' not in kwargs :
-            _logger.error('L1A GLU DIR is missing!')
-            raise ErrorL1WISE()
+            raise ErrorL1WISE('L1A GLU DIR is missing!')
         l1a_glu_dir = kwargs['L1A_GLU_DIR']
         # l1a_glu_hdrf,l1a_glu_dataf =kwargs['L1A_GLU_HDR'],kwargs['L1A_GLU_DATA']
         l1a_glu_hdrf,l1a_glu_dataf = os.path.join(l1a_glu_dir, image_name + '-L1A.glu.hdr'),os.path.join(l1a_glu_dir,image_name+'-L1A.glu')
+        if not (os.path.exists(l1a_glu_hdrf) and os.path.exists(l1a_glu_dataf)):
+            raise ErrorL1WISE("WISE L1A_GLU Header:{} or {} doesn't exist! ".format(l1a_glu_hdrf,l1a_glu_dataf))
+
 
 
         if 'NAV_LOG_DIR' not in kwargs:
-            _logger.error("Navigation sum log file is missing!")
-            raise ErrorL1WISE()
+            raise ErrorL1WISE("Navigation sum log file is missing!")
         nav_log_dir = kwargs['NAV_LOG_DIR']
         nav_logf = os.path.join(nav_log_dir, image_name + '-Navcor_sum.log')
+        if not os.path.exists(nav_logf):
+            raise ErrorL1WISE("WISE NAV_LOG_LOG {}  doesn't exist! ".format(nav_logf))
+
 
         if 'DATA_DIR' not in kwargs:
-            _logger.error("Data DIR is missing!")
-            raise ErrorL1WISE("Data dir is missing!")
-        self.data_dir = kwargs['DATA_DIR']
+            raise ErrorL1WISE("DATA_DIR is missing!")
+        data_dir = kwargs['DATA_DIR']
+        if not (os.path.exists(data_dir) and os.path.isdir(data_dir)):
+            raise ErrorL1WISE("DATA_DIR:{} is not a directory or does not exist!".format(data_dir))
+        # self.data_dir = kwargs['DATA_DIR']
 
         fl = FlightLine.FromWISEFile(nav_sum_log=nav_logf, L1A_Header=l1a_glu_hdrf)
 
@@ -110,7 +116,7 @@ class L1_WISE(Level1_Base):
         # acq_time,nrows,ncols,affine,proj):
         acq_time = pendulum.parse(self.header.metadata['acquisition time'],)
 
-        super().__init__(acq_time,nrows,ncols,nbands,affine,proj,proj4string,file_dir,file_name,image_name,'WISE',bandwaves=waves)
+        super().__init__(acq_time,nrows,ncols,nbands,affine,proj,proj4string,file_dir,file_name,image_name,'WISE',data_dir,bandwaves=waves)
         self.FWHM = np.full(nbands,5.05)
 
         rgb_bands = tuple([int(item)-1 for item in self.header.metadata['default bands']])
