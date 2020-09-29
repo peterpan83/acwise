@@ -1,25 +1,10 @@
 # -*- coding: utf-8 -*-
-"""
-This is a skeleton file that can serve as a starting point for a Python
-console script. To run this script uncomment the following lines in the
-[options.entry_points] section in setup.cfg:
-
-    console_scripts =
-         fibonacci = ac4icw.skeleton:run
-
-Then run `python setup.py install` which will install the command `fibonacci`
-inside your current environment.
-Besides console scripts, the header (i.e. until _logger...) of this file can
-also be used as template for Python modules.
-
-Note: This skeleton file can be safely removed if not needed!
-"""
-
 import argparse
 import sys,os
 import logging
 import configparser
 
+from ac4icw.exception_ac import ErrorRayleighMissing
 from ac4icw import __version__
 
 __author__ = "panyq"
@@ -116,8 +101,16 @@ def main(args):
     config.read(config_f)
 
     config_dict = get_dict(config)
-    atc = build_ac(config_dict)
-    atc.Run()
+    try:
+        atc = build_ac(config_dict)
+    except ErrorRayleighMissing as e:
+        _logger.error("can not build AC process chain, no Rayleigh calculator")
+        sys.exit(-1)
+    except Exception as e:
+        _logger.error("can not build AC process chain,exit")
+        sys.exit(-1)
+    else:
+        atc.Run()
 
 
 

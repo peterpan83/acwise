@@ -1,14 +1,9 @@
 import abc
 import numpy as np
-import os
 from sklearn import linear_model
 import pandas as pd
-from itertools import product
-
-from ..decorators import *
 from ..atm_correction.interface import AerosolCalculator
 
-from pathlib import Path
 import logging.config
 
 _logger = logging.getLogger("Aerosol")
@@ -225,7 +220,7 @@ class AerosolDSF(AerosolAlgorithm):
 
     def get_results(self, iBandIndex=0):
         '''
-        calculating the rhoa,albedo,upwelling and downwelling transmittance based on the retrieved AOT and aerosol type
+        calculating rhoa,albedo,upwelling and downwelling transmittance based on the retrieved AOT and aerosol type
         :param iBandIndex:
         :return: (rhoa,albeo,trans_up,trans_down)
         '''

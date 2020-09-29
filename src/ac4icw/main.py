@@ -3,6 +3,7 @@ from .level2 import Level2
 from .output import RasterIOWriter
 from .helper import createInstance
 from .helper import getClass
+from .exception_ac import ErrorRayleighMissing
 
 import logging
 
@@ -69,7 +70,10 @@ def build_ac(config_dic:dict):
 
 #--------------------------------Initialize Level 2-----------------------------#
     level_2 = Level2.FromLevel1(level_1)
-    writer = RasterIOWriter.FromLevel2(level_2,**config_dic['OUTPUT'])
+    try:
+        writer = RasterIOWriter.FromLevel2(level_2,**config_dic['OUTPUT'])
+    except Exception as e:
+        raise e
     # writer = PlotShow()
     level_2.setOutputer(writer)
 
@@ -93,7 +97,8 @@ def build_ac(config_dic:dict):
 
     ray_cal = config_dic[str.upper(procedure)]['RAY_CALCULATOR']
     if ray_cal is None:
-        _logger.warning('No rayleigh correction')
+        _logger.error('please specify rayleigh calculator,rayleigh correction is mandatory!')
+        raise ErrorRayleighMissing()
     else:
         rayleigh_cal_class = getClass('ac4icw.atm_correction.rayleigh', 'Rayleigh{}'.format(ray_cal))
         atm_c.setRayleighCalculator(rayleigh_cal_class, **basic_parameter_dic)
@@ -105,7 +110,6 @@ def build_ac(config_dic:dict):
         _logger.warning("No adjacency effection correction!")
     else:
         _logger.warning("Adjacency effect correction not implemented yet!")
-        pass
 
 
     glint_cal = config_dic[str.upper(procedure)]['GLINT_CALCULATOR']
@@ -114,7 +118,10 @@ def build_ac(config_dic:dict):
     else:
         # _logger.warning("Glint correction not implemented yet!")
         glint_cal_class = getClass('ac4icw.atm_correction.glint', 'Glint{}'.format(glint_cal))
-        atm_c.setGlintCalculator(glint_cal_class,**basic_parameter_dic)
+        try:
+            atm_c.setGlintCalculator(glint_cal_class,**basic_parameter_dic)
+        except Exception as e:
+            raise e
 
 
     aero_alg, aero_cal = config_dic[str.upper(procedure)]['AERO_ALGRITHM'],config_dic[str.upper(procedure)]['AERO_CALCULATOR']

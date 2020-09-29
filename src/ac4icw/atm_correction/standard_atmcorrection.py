@@ -74,11 +74,15 @@ class StandardAtmCorrection(AtmCorrectionInterface):
         fpath = os.path.join(self.__out_dir,"nLg.png")
         _logger.info("Save NLg to {}".format(fpath))
         import matplotlib.pyplot as plt
-        plt.figure(figsize=(12,12))
-        plt.imshow(self.__nlg)
-        plt.title("nLg ($sr^{-1}$)")
-        plt.colorbar(shrink=0.8)
-        plt.savefig(fpath)
+        try:
+            plt.figure(figsize=(12,12))
+            plt.imshow(self.__nlg)
+            plt.title("nLg ($sr^{-1}$)")
+            plt.colorbar(shrink=0.8)
+            plt.savefig(fpath)
+        except Exception as e:
+            _logger.error("error when save nLg")
+            raise e
 
 
     def Run(self):
@@ -131,6 +135,7 @@ class StandardAtmCorrection(AtmCorrectionInterface):
 
 
         itile = 0
+
         for tile in tqdm(self._level_1.gen_tiles(size=self.tile_sile),desc='Processing Tile'):
             _logger.info("{},{}".format(tile.sline, tile.spixl))
             # if tile[0]!=667 and tile[2]!=2001:
@@ -161,47 +166,50 @@ class StandardAtmCorrection(AtmCorrectionInterface):
             ### set up aerosol
             set_aero_obs_geo(solz, viewz, phi)
             albedo_r_s = []
-            for i, wave in tqdm(enumerate(self._level_1.bandwaves), desc='Processing Band'):
-                trans_g_up = get_gas_trans_up(i)
-                trans_g_down = get_gas_trans_down(i)
+            try:
+                for i, wave in tqdm(enumerate(self._level_1.bandwaves), desc='Processing Band'):
+                    trans_g_up = get_gas_trans_up(i)
+                    trans_g_down = get_gas_trans_down(i)
 
-                rhor = rayleigh_get_reflectance(i)
-                trans_r_up,trans_r_down =  rayleigh_get_trans_up(i),rayleigh_get_trans_down(i)
-                trans_r_up.tofile(os.path.join(self.__out_dir,"trans_r_up_{}_{}".format(itile,i)))
-                trans_r_down.tofile(os.path.join(self.__out_dir, "trans_r_down_{}_{}".format(itile, i)))
+                    rhor = rayleigh_get_reflectance(i)
+                    trans_r_up,trans_r_down =  rayleigh_get_trans_up(i),rayleigh_get_trans_down(i)
+                    trans_r_up.tofile(os.path.join(self.__out_dir,"trans_r_up_{}_{}".format(itile,i)))
+                    trans_r_down.tofile(os.path.join(self.__out_dir, "trans_r_down_{}_{}".format(itile, i)))
 
 
-                albeo_r = rayleigh_get_spherical_albedo(i)
-                albedo_r_s.append(albeo_r)
+                    albeo_r = rayleigh_get_spherical_albedo(i)
+                    albedo_r_s.append(albeo_r)
 
-                # rhog = get_glint_reflectance(trans_r_down)
-                rhog = nlg*np.pi*trans_r_down/cos_solar
+                    # rhog = get_glint_reflectance(trans_r_down)
+                    rhog = nlg*np.pi*trans_r_down/cos_solar
 
-                rhot = self._level_1.getRhotBand(i,tile=tile)
+                    rhot = self._level_1.getRhotBand(i,tile=tile)
 
-                rhoaw = rhot/trans_g_up/trans_g_down-rhor-trans_r_up*rhog
-                rhoaw.tofile(os.path.join(self.__out_dir, "rhoaw_{}_{}".format(itile, i)))
-                aerosol_retrival_push(i,rhoaw)
+                    rhoaw = rhot/trans_g_up/trans_g_down-rhor-trans_r_up*rhog
+                    rhoaw.tofile(os.path.join(self.__out_dir, "rhoaw_{}_{}".format(itile, i)))
+                    aerosol_retrival_push(i,rhoaw)
 
-                del rhor,trans_g_up,trans_g_down,rhog
+                    del rhor,trans_g_up,trans_g_down,rhog
 
-            aerosol_retrive()
-            aerosol_clear()
+                aerosol_retrive()
+                aerosol_clear()
 
-            for i, wave in tqdm(enumerate(self._level_1.bandwaves),desc='Correcting aerosol'):
-                rhoaw = np.fromfile(os.path.join(self.__out_dir, "rhoaw_{}_{}".format(itile, i))).reshape(solz.shape)
-                trans_r_up = np.fromfile(os.path.join(self.__out_dir,"trans_r_up_{}_{}".format(itile,i))).reshape(solz.shape)
-                trans_r_down = np.fromfile(os.path.join(self.__out_dir,"trans_r_down_{}_{}".format(itile,i))).reshape(solz.shape)
-                rhoa,albeo_a,trana_up,trana_down = aerosol_get_results(i)
-                rhow_m = (rhoaw -rhoa)/(trana_up*trans_r_up*trana_down*trans_r_down)
-                rhow = rhow_m/(1+rhow_m*(albeo_a+albedo_r_s[i]))
-                Rrs = rhow/np.pi/(trana_down*trans_r_down)
-                self._level_2.update_tile(tile=tile,data=Rrs,iBandIndex=i)
-
-            tempfiles = glob.glob(os.path.join(self.__out_dir, "rhoaw_{}*".format(itile)))+glob.glob(os.path.join(self.__out_dir, "trans_r_up_{}*".format(itile)))+glob.glob(os.path.join(self.__out_dir, "trans_r_down_{}*".format(itile)))
-            if len(tempfiles)>0:
-                for tf in tqdm(tempfiles,desc="removing temp files"):
-                    os.remove(tf)
+                for i, wave in tqdm(enumerate(self._level_1.bandwaves),desc='Correcting aerosol'):
+                    rhoaw = np.fromfile(os.path.join(self.__out_dir, "rhoaw_{}_{}".format(itile, i))).reshape(solz.shape)
+                    trans_r_up = np.fromfile(os.path.join(self.__out_dir,"trans_r_up_{}_{}".format(itile,i))).reshape(solz.shape)
+                    trans_r_down = np.fromfile(os.path.join(self.__out_dir,"trans_r_down_{}_{}".format(itile,i))).reshape(solz.shape)
+                    rhoa,albeo_a,trana_up,trana_down = aerosol_get_results(i)
+                    rhow_m = (rhoaw -rhoa)/(trana_up*trans_r_up*trana_down*trans_r_down)
+                    rhow = rhow_m/(1+rhow_m*(albeo_a+albedo_r_s[i]))
+                    Rrs = rhow/np.pi/(trana_down*trans_r_down)
+                    self._level_2.update_tile(tile=tile,data=Rrs,iBandIndex=i)
+            except Exception as e:
+                _logger.error(e)
+            finally:
+                tempfiles = glob.glob(os.path.join(self.__out_dir, "rhoaw_{}*".format(itile)))+glob.glob(os.path.join(self.__out_dir, "trans_r_up_{}*".format(itile)))+glob.glob(os.path.join(self.__out_dir, "trans_r_down_{}*".format(itile)))
+                if len(tempfiles)>0:
+                    for tf in tqdm(tempfiles,desc="removing temp files"):
+                        os.remove(tf)
 
             itile+=1
         save_nlg()

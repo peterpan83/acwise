@@ -1,21 +1,24 @@
-import abc
 import os
 import numpy as np
 import logging
 import scipy.interpolate as interp
-import functools
 
-from ..decorators import *
-from ..helper import FillNA2D
 from .interface import GlintCalcultor
 
 _logger = logging.getLogger("Glint")
 class GlintCoxMunk(GlintCalcultor):
+    '''
+    glint estimation is based on LUTs that were generated based on the CoxMunk mode
+    '''
 
     def __loadLUTs(self):
         import h5py
         lut_path = os.path.join(self.__data_shared_dir, 'glint_Cox_Munk.h5')
-        data = h5py.File(lut_path, 'r')
+        try:
+            data = h5py.File(lut_path, 'r')
+        except IOError as e:
+            _logger.error("can not read {}".format(lut_path))
+            raise e
         self.solz_lut = data['solar_zenith'][()]
         self.vewz_lut = data['viewing_zenith'][()]
         self.phi_lut = data['relative_azimuth'][()]
@@ -31,7 +34,12 @@ class GlintCoxMunk(GlintCalcultor):
         self.sensor = sensor.upper()
         self.__data_shared_dir = os.path.join(kwargs['data_dir'], 'LUTs')
         _logger.info('loading LUTs....')
-        self.__loadLUTs()
+        try:
+            self.__loadLUTs()
+        except Exception as e:
+            _logger.error("failed to initialize GlintCoxMunk")
+            raise e
+
         self._solz_valid,self._senz_valid,self._phi_valid = None,None,None
         self._windspeed_valid = None
         self._nLg_valid = None

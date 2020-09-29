@@ -9,7 +9,6 @@ import pathlib
 from tqdm import tqdm
 import scipy.interpolate as interp
 
-from ..decorators import *
 from ..atm_correction.interface import AerosolCalculator
 
 import logging.config
@@ -17,10 +16,6 @@ import logging.config
 _logger = logging.getLogger("Aerosol")
 
 class AerosolSixS(AerosolCalculator):
-    # __data_shared_dir = os.path.join(str(pathlib.Path(os.path.realpath(__file__)).parent.parent.parent),'data', 'LUTs')
-    # __rhoa_file = os.path.join(__data_shared_dir, 'rhoa.txt')
-    # __trana_up_file = os.path.join(__data_shared_dir, 'transa_up.txt')
-    # __trana_down_file = os.path.join(__data_shared_dir, 'transa_down.txt')
 
     @classmethod
     def getUsrDefineAerosolType(cls):
@@ -69,9 +64,9 @@ class AerosolSixS(AerosolCalculator):
         super().__init__()
         _logger.info('Initializing aerosol scattering caculation based on 6SV simulation....')
         self.sensor = sensor.upper()
-        self.latitude = 49 if 'latitude' not in kwargs else kwargs['latitude']
+        self.latitude = kwargs['latitude']
         self.groud_altitude = 0 if 'groud_altitude' not in kwargs else int(round(kwargs['groud_altitude'],-3))
-        self.sensor_altitude = 3 if 'sensor_altitude' not in kwargs else kwargs['sensor_altitude']
+        self.sensor_altitude = kwargs['sensor_altitude']
         self.__data_shared_dir = os.path.join(kwargs['data_dir'], 'LUTs')
         self.__aerosol_types = []
         self.__aerosol_type_names = []

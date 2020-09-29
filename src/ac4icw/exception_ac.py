@@ -14,7 +14,7 @@ class ExceptionEnviDimensionNotMatch(ExceptionEnviImage):
     '''
     def __init__(self,header_dimension,data_dimension, message="ENVI dimension doesn't match "):
         self.message = message
-        self.message ="{}: header {},data {}".format(self.message,str(header_dimension),str(data_dimension))
+        self.message +="{}: header {},data {}".format(self.message,str(header_dimension),str(data_dimension))
         super().__init__(self.message)
 
 class ErrorFlightLine(Exception):
@@ -26,6 +26,18 @@ class ErrorL1WISE(Exception):
     def __init__(self,message='L1WISE initialize failed'):
         self.message = message
         super().__init__(self.message)
+
+class ErrorRayleigh(Exception):
+    def __init__(self,message="Rayleigh error"):
+        self.message = message
+        super().__init__(self.message)
+
+class ErrorRayleighMissing(ErrorRayleigh):
+    def __init__(self):
+        self.message="Rayleigh calculator is missing"
+        super().__init__(self.message)
+
+
         
 
 

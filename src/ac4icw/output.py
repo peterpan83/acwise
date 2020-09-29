@@ -73,14 +73,18 @@ class RasterIOWriter(OutputInterface):
                     'blockysize':512,
                     'BIGTIFF':'YES'
         }
-
-        self.__dst = rasterio.open(fpath, 'w', **meta_dic)
-        self.__dst.nodata = 0
-        self.__dst.update_tags(scale=1e-5,offset=0)
-        self.__dst.update_tags(ns='software',software_name='ac4icw',version='0.1',author='Yanqun Pan,panyq213@163.com')
-        if bandwaves is not None:
-            self.__dst.update_tags(ns='bandwaves',wavelengths=','.join([str(round(w,2)) for w in bandwaves]),unit='nm')
-        _logger.info("Level2 file:{}".format(fpath))
+        try:
+            self.__dst = rasterio.open(fpath, 'w', **meta_dic)
+        except Exception as e:
+            _logger.error("can not create {}".format(fpath))
+            raise e
+        else:
+            self.__dst.nodata = 0
+            self.__dst.update_tags(scale=1e-5,offset=0)
+            self.__dst.update_tags(ns='software',software_name='ac4icw',version='0.1',author='Yanqun Pan,panyq213@163.com')
+            if bandwaves is not None:
+                self.__dst.update_tags(ns='bandwaves',wavelengths=','.join([str(round(w,2)) for w in bandwaves]),unit='nm')
+            _logger.info("Level2 file:{}".format(fpath))
 
     def output(self, *args, **kwargs):
         # import matplotlib.pyplot as plt
@@ -116,5 +120,5 @@ class PlotShow(OutputInterface):
             plt.show()
 
     def close(self):
-        i= 1
+        pass
 
