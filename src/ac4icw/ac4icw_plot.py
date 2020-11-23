@@ -324,32 +324,6 @@ class Spectrum(cli.Application):
 
 
         
-
-
-
-
-
-
-
-
-                # rhorc = rhot/trans_g_down_all.flatten()/trans_g_up_all.flatten()-rhor_all.flatten()
-                # y_values.append(rhorc)
-                # names.append(self.SPECTRUM_NAMES_DIC['m'])
-                #
-                # aero_cal_name = config_dic[str.upper(procedure)]['AERO_CALCULATOR']
-                # aerosol_cal_class = getClass('ac4icw.atm_correction.aerosol', 'Aerosol{}'.format(aero_cal_name))
-                # aero_cal =  aerosol_cal_class(level_1.sensor,**basic_parameter_dic)
-                #
-                #
-                #
-                # rhow_m = (rhorc -rhoa_all.flatten())/(trans_a_up_all.flatten()*trans_r_up_all.flatten()*trans_a_down_all.flatten()*trans_r_down_all.flatten())
-                # rhow = rhow_m/(1+rhow_m*(albedo_a_all.flatten()+albeo_r_all.flatten()))
-                # Rrs = rhow / np.pi / (trans_a_down_all.flatten() * trans_r_down_all.flatten())
-                # _logger.info("Rrs:{}".format(str(Rrs)))
-                #
-                # y_values.append(Rrs)
-                # names.append(self.SPECTRUM_NAMES_DIC['w'])
-
         plot_spectrum(waves,y_values,names,title=title,y_label=ylabel)
 
 
