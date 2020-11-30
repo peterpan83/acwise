@@ -25,6 +25,7 @@ import plumbum.colors as colors
 from rasterio.plot import show
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+import pandas as pd
 
 # plt.style.use('presentation.mplstyle')
 
@@ -50,7 +51,7 @@ def plot_image(img,title,watermask=None):
     plt.figure(figsize=(8,8))
     _max = img.max()*0.1
     if watermask is not None:
-        _max = img[watermask].max()
+        _max = img[watermask].max()*1.5
 
     img[img==0] = np.nan
     plt.imshow(img,vmax=_max)
@@ -66,14 +67,23 @@ def plot_image_(img,title):
     plt.title(title)
     plt.show()
 
-def plot_spectrum(xaxis,yaxis,names,title,y_label='Reflectance'):
-    plt.figure(figsize=(10,10))
+def plot_spectrum(xaxis,yaxis,names,title,datatype):
+    _,axes = plt.subplots(ncols=len(datatype),nrows=1,figsize=(5*len(datatype),4))
+     
+    # plt.figure(figsize=(10,10))
     for y_v,name in zip(yaxis,names):
-        plt.plot(xaxis,y_v,label=name)
-    plt.title(title)
-    plt.xlabel("Wavelength (nm)")
-    plt.ylabel(y_label)
-    plt.legend()
+        if name.find('trans')>-1:
+            axes[1].plot(xaxis,y_v,label=name)
+        else:
+            axes[0].plot(xaxis,y_v,label=name)
+    axes[0].set_title(title)
+    axes[1].set_title(title+'\n transmittance due to gas absorption')
+    axes[0].set_xlabel("Wavelength (nm)")
+    axes[1].set_xlabel("Wavelength (nm)")
+    axes[0].set_ylabel("reflectance")
+    axes[1].set_ylabel("transmittance")
+    axes[0].legend(ncol=2)
+    axes[1].legend()
     plt.show()
 
 
@@ -170,7 +180,8 @@ class Spectrum(cli.Application):
     _aero_type_index = 2
     _taua550 = 0.005
 
-    SPECTRUM_NAMES_DIC = {'t':'$\\rho_t$','r':'$\\rho_r$','m':'$\\rho_{rc}$','a':'$\\rho_a$','w':'$\\rho_w$','k':'$\\rho_{gc}$','g':'trans','f':'F0 ($$)'}
+    SPECTRUM_NAMES_DIC = {'t':'$\\rho_t$','r':'$\\rho_r$','m':'$\\rho_{rc}$','a':'$\\rho_a$',
+    'w':'$\\rho_w$','k':'$\\rho_{gc}$','g':'trans','f':'F0 ($$)','b':'$\\rho_b$'}
 
     @cli.switch(["-c"],str,mandatory=True,help="config.ini file that runs the AC program")
     def config_file(self,config_f):
@@ -202,6 +213,10 @@ class Spectrum(cli.Application):
     @cli.switch(["--taua"],float,help="AOT at 550nm")
     def set_taua(self,value):
         self._taua550 = value
+
+    @cli.switch(["--saveto"],str,help="specific a path to save the data as csv")
+    def set_csv(self,value):
+        self._csvf = value
 
 
     def main(self, *args):
@@ -283,30 +298,33 @@ class Spectrum(cli.Application):
 
         rhoa_all, trans_a_down_all, trans_a_up_all, albedo_a_all = np.asarray(rhoa_all).flatten(),\
                                                                    np.asarray(trans_a_down_all).flatten(), np.asarray(trans_a_up_all).flatten(), np.asarray(albedo_a_all).flatten()
-
+        data_type = ['reflectance']
         if 'r' in self._names:
             y_values.append(rhor_all)
             names.append(self.SPECTRUM_NAMES_DIC['r'])
         if 'a' in self._names:
             y_values.append(rhoa_all)
             names.append(self.SPECTRUM_NAMES_DIC['a'])
-            title+='\naerosol:{},$\\tau_a(550)$:{:.3f}'.format(aero_cal.get_aerosol_type(self._aero_type_index),self._taua550)
+            # title+='\naerosol:{},$\\tau_a(550)$:{:.3f}'.format(aero_cal.get_aerosol_type(self._aero_type_index),self._taua550)
         if 't' in self._names:
             y_values.append(rhot)
             names.append(self.SPECTRUM_NAMES_DIC['t'])
         if 'k' in self._names:
-            rhogc = rhot / trans_g_down_all/ trans_g_up_all
+            #rhogc = rhot / trans_g_down_all/ trans_g_up_all
+            print(str(trans_g_up_all))
+            rhogc = rhot / trans_g_up_all
             y_values.append(rhogc)
             names.append(self.SPECTRUM_NAMES_DIC['k'])
         if 'g' in self._names:
-            ylabel = 'Transmittance'
-            title = title+'\n transmittance due to gas absorption'
+            # ylabel = 'Transmittance'
+            data_type.append('Transmittance')
+            # title = title+'\n transmittance due to gas absorption'
             y_values.append(trans_g_down_all)
             names.append('downwelling '+self.SPECTRUM_NAMES_DIC['g'])
             y_values.append(trans_g_up_all)
             names.append('upwelling '+self.SPECTRUM_NAMES_DIC['g'])
-        if 'w' in self._names:
-            rhogc = rhot / trans_g_down_all / trans_g_up_all
+        if 'w' in self._names or 'b' in self._names:
+            rhogc = rhot / trans_g_up_all
             rhorc = rhogc - rhor_all
             if 'm' in self._names:
                 # rhorc[rhorc<0] = np.nan
@@ -318,13 +336,20 @@ class Spectrum(cli.Application):
             rhow = rhow_m / (1 + rhow_m * (albedo_a_all + albeo_r_all))
             # rhow[rhow<0] = np.nan
             y_values.append(rhow)
-            names.append(self.SPECTRUM_NAMES_DIC['w'])
+            if 'w' in self._names:
+                names.append(self.SPECTRUM_NAMES_DIC['w'])
+            else:
+                names.append(self.SPECTRUM_NAMES_DIC['b'])
 
-
+            if self._csvf is not None:
+                # if not os.path.(self._csvf):
+                #     _logger.warn("{} invalid".format(self._csvf))
+                # else:
+                pd.DataFrame(data=y_values,columns=waves,index=names).to_csv(self._csvf)
 
 
         
-        plot_spectrum(waves,y_values,names,title=title,y_label=ylabel)
+        plot_spectrum(waves,y_values,names,title=title,datatype=data_type)
 
 
 

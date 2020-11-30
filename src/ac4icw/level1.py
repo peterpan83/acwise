@@ -276,6 +276,7 @@ class Level1_Base():
         # self._acq_localtime()
         hourAngle = calSolarHourAngel(self.longitude,self.central_lon_localimezone,self.acq_time_local)
 
+
         ## year, month and day
         year, month, day = self.acq_time.year, self.acq_time.month, self.acq_time.day
         

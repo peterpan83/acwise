@@ -185,7 +185,10 @@ class StandardAtmCorrection(AtmCorrectionInterface):
 
                     rhot = self._level_1.getRhotBand(i,tile=tile)
 
-                    rhoaw = rhot/trans_g_up/trans_g_down-rhor-trans_r_up*rhog
+                    # could not be divied by the downwelling transmittance due to gas absorption
+                    # rhoaw = rhot/trans_g_up/trans_g_down-rhor-trans_r_up*rhog
+
+                    rhoaw = rhot/trans_g_up-rhor-trans_r_up*rhog
                     rhoaw.tofile(os.path.join(self.__out_dir, "rhoaw_{}_{}".format(itile, i)))
                     aerosol_retrival_push(i,rhoaw)
 

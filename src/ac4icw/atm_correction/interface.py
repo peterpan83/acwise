@@ -58,6 +58,8 @@ class AtmCorrectionInterface(metaclass=abc.ABCMeta):
     def setAdjAlgorithm(self,*args,**kwargs):
         pass
 
+
+
 class RayleighCalculator():
     '''
     interface of scattering calculation

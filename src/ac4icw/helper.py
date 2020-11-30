@@ -171,6 +171,14 @@ def transform_xy(transform, rows, cols, offset='center'):
     return xs, ys
 
 def transform_rowcol(affine, ys, xs,precision):
+    '''
+    transform x and y, to row and col.
+    :param affine: instance of rasterio.transform.Affine
+    :param ys:
+    :param xs:
+    :param precision:
+    :return:  row and cols
+    '''
     rows, cols = transform.rowcol(affine,xs=xs, ys=ys,precision=precision)
     return np.asarray(rows),np.asarray(cols)
 #-------------------------------END PROJECTION-------------------------------------------------#

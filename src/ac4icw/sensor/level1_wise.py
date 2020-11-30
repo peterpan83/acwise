@@ -102,7 +102,6 @@ class L1_WISE(Level1_Base):
         nrows,ncols,nbands = self.header.nrows,self.header.ncols,self.header.nbands
         waves = np.array([float(w) for w in self.header.metadata['wavelength']])
 
-
         d = gdal.Open(self.data_f)
         self.data = d
         if d.RasterCount !=nbands or d.RasterXSize != ncols or d.RasterYSize!=nrows:
