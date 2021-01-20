@@ -69,7 +69,7 @@ def build_ac(config_dic:dict):
     except ErrorLevel1 as e:
         _logger.error(e.message)
         sys.exit(-1)
-
+    _logger.debug("----------------")
     level_1.cal_water_mask()
     level_1.cal_viewing_geo()
     level_1.cal_phi()
@@ -93,6 +93,46 @@ def build_ac(config_dic:dict):
     basic_parameter_dic = {'groud_altitude': level_1.ground_altitude, 'sensor_altitude': level_1.sensor_altitude,
                            'month': level_1.acq_time.month,'latitude': level_1.center_latitude,'data_dir':level_1.data_dir}
 
+    if procedure == 'standard':
+        ray_cal = config_dic[str.upper(procedure)]['RAY_CALCULATOR']
+        if ray_cal is None:
+            _logger.error('please specify rayleigh calculator,rayleigh correction is mandatory!')
+            raise ErrorRayleighMissing()
+        else:
+            rayleigh_cal_class = getClass('ac4icw.atm_correction.rayleigh', 'Rayleigh{}'.format(ray_cal))
+            atm_c.setRayleighCalculator(rayleigh_cal_class, **basic_parameter_dic)
+
+        aero_alg, aero_cal = config_dic[str.upper(procedure)]['AERO_ALGRITHM'],config_dic[str.upper(procedure)]['AERO_CALCULATOR']
+        if ~(aero_alg is None or aero_cal is None):
+            aerosol_cal_class = getClass('ac4icw.atm_correction.aerosol', 'Aerosol{}'.format(aero_cal))
+            aerosol_retrival_calss = getClass('ac4icw.atm_correction.aero_retrival', 'Aerosol{}'.format(aero_alg))
+            basic_parameter_dic.update({'aero_cal': aerosol_cal_class})
+            basic_parameter_dic.update({'aero_alg':aero_alg})
+            basic_parameter_dic.update(config_dic[str.upper(procedure)])
+            atm_c.setAeroAlgorithm(aerosol_retrival_calss, **basic_parameter_dic)
+
+    elif procedure == 'pathac':
+        _logger.debug("{},{}".format(str.upper(procedure),config_dic[str.upper(procedure)]))
+        path_alg, path_cal = config_dic[str.upper(procedure)]['PATH_ALGRITHM'],config_dic[str.upper(procedure)]['PATH_CALCULATOR']
+
+        # _logger.debug("{},{}".format(path_alg,path_cal))
+        if ~(path_alg is None or path_cal is None):
+            # _logger.debug("set path algorithm.........")
+            path_cal_class = getClass('ac4icw.atm_correction.path', 'Path{}'.format(path_cal))
+            # _logger.error('ac4icw.atm_correction.path, Path{}'.format(path_cal))
+            path_retrival_calss = getClass('ac4icw.atm_correction.path_retrival', 'Path{}'.format(path_alg))
+            # _logger.error('c4icw.atm_correction.path_retrival, Path{}'.format(path_alg))
+
+            basic_parameter_dic.update({'path_cal': path_cal_class})
+            basic_parameter_dic.update({'path_alg':path_retrival_calss})
+            basic_parameter_dic.update(config_dic[str.upper(procedure)])
+            # basic_parameter_dic.update({'aero_index': config_dic[str.upper(procedure)]['AERO_INDEX']})
+
+
+            _logger.debug("set path algorithm.........")
+            # _logger.debug("{},{}".format(type(atm_c),getattr(atm_c,"setPathAlgorithm")))
+            # atm_c.setPathAlgorithm(path_alg=path_retrival_calss,**basic_parameter_dic)
+            atm_c.setPath(path_retrival_calss,**basic_parameter_dic)
 
     gas_cal = config_dic[str.upper(procedure)]['GAS_CALCULATOR']
     if gas_cal is None:
@@ -101,25 +141,14 @@ def build_ac(config_dic:dict):
         gas_cal_cal_class = getClass('ac4icw.atm_correction.gas', 'Gas{}'.format(gas_cal))
         atm_c.setGasCalculator(gas_cal_cal_class, **basic_parameter_dic)
 
-
-
-    ray_cal = config_dic[str.upper(procedure)]['RAY_CALCULATOR']
-    if ray_cal is None:
-        _logger.error('please specify rayleigh calculator,rayleigh correction is mandatory!')
-        raise ErrorRayleighMissing()
-    else:
-        rayleigh_cal_class = getClass('ac4icw.atm_correction.rayleigh', 'Rayleigh{}'.format(ray_cal))
-        atm_c.setRayleighCalculator(rayleigh_cal_class, **basic_parameter_dic)
-
-
-
+    _logger.debug("ADJ_ALGRITHM")
     adj_alg = config_dic[str.upper(procedure)]['ADJ_ALGRITHM']
     if adj_alg is None:
         _logger.warning("No adjacency effection correction!")
     else:
         _logger.warning("Adjacency effect correction not implemented yet!")
 
-
+    _logger.debug("GLINT_CALCULATOR")
     glint_cal = config_dic[str.upper(procedure)]['GLINT_CALCULATOR']
     if glint_cal is None:
         _logger.warning("No glint correction!")
@@ -127,19 +156,9 @@ def build_ac(config_dic:dict):
         # _logger.warning("Glint correction not implemented yet!")
         glint_cal_class = getClass('ac4icw.atm_correction.glint', 'Glint{}'.format(glint_cal))
         try:
-            atm_c.setGlintCalculator(glint_cal_class,**basic_parameter_dic)
+            atm_c.setGlintCalculator(glint_cal_class, **basic_parameter_dic)
         except Exception as e:
             raise e
-
-
-    aero_alg, aero_cal = config_dic[str.upper(procedure)]['AERO_ALGRITHM'],config_dic[str.upper(procedure)]['AERO_CALCULATOR']
-    if ~(aero_alg is None or aero_cal is None):
-        aerosol_cal_class = getClass('ac4icw.atm_correction.aerosol', 'Aerosol{}'.format(aero_cal))
-        aerosol_retrival_calss = getClass('ac4icw.atm_correction.aero_retrival', 'Aerosol{}'.format(aero_alg))
-        basic_parameter_dic.update({'aero_cal': aerosol_cal_class})
-        basic_parameter_dic.update(config_dic[aero_alg])
-        atm_c.setAeroAlgorithm(aerosol_retrival_calss, **basic_parameter_dic)
-
 
     return atm_c
 

@@ -104,11 +104,13 @@ def main(args):
     try:
         atc = build_ac(config_dict)
     except ErrorRayleighMissing as e:
+
         _logger.error("can not build AC process chain, no Rayleigh calculator")
         sys.exit(-1)
-    except Exception as e:
-        _logger.error("can not build AC process chain,exit")
-        sys.exit(-1)
+    # except Exception as e:
+    #     _logger.error("{}".format(e))
+    #     _logger.error("can not build AC process chain,exit")
+    #     sys.exit(-1)
     else:
         atc.Run()
 

@@ -58,7 +58,80 @@ class AtmCorrectionInterface(metaclass=abc.ABCMeta):
     def setAdjAlgorithm(self,*args,**kwargs):
         pass
 
+    def setPathAlgorithm(self,*args,**kwargs):
+        pass
 
+class PathCalculator():
+    '''
+    interface of path reflectane calculation
+    '''
+    @classmethod
+    def __subclasshook__(cls, subclass):
+        return (hasattr(subclass, 'cal_reflectance') and
+                callable(subclass.cal_reflectance) and
+                hasattr(subclass, 'cal_reflectance_t') and
+                callable(subclass.cal_reflectance_t) and
+                hasattr(subclass, 'cal_trans_up') and
+                callable(subclass.cal_trans_up) and
+                hasattr(subclass,'cal_trans_down') and
+                callable(subclass.cal_trans_down) and
+                hasattr(subclass, 'cal_spherical_albedo') and
+                callable(subclass.cal_spherical_albedo) or
+                NotImplemented)
+
+    @abc.abstractmethod
+    def cal_reflectance(self,iband,solz,senz,phi):
+        '''
+        calculateing path reflectance
+        :param iband: band index
+        :param solz: solar zenith angle (degree)
+        :param senz:viewing zenith angle (degree)
+        :param phi:  relative zenith angle (degree)
+        :return: reflectance
+        '''
+        pass
+
+    @abc.abstractmethod
+    def cal_reflectance_t(self,iband,solz,senz,phi):
+        '''
+        calculateing path reflectance including the part of sky reflectance
+        reflected by the air-water interface.
+        :param iband: band index
+        :param solz: solar zenith angle (degree)
+        :param senz:viewing zenith angle (degree)
+        :param phi:  relative zenith angle (degree)
+        :return: reflectance
+        '''
+        pass
+
+    @abc.abstractmethod
+    def cal_trans_up(self,iband,senz):
+        '''
+        calculating upwelling transmittance due to rayleigh and aerosol scattering
+        :param iband:
+        :param senz:
+        :return:
+        '''
+        pass
+
+    @abc.abstractmethod
+    def cal_trans_down(self,iband,solz):
+        '''
+        calculating downwelling transmittance due to rayleigh and aerosol scattering
+        :param iband:
+        :param solz:
+        :return:
+        '''
+        pass
+
+    @abc.abstractmethod
+    def cal_spherical_albedo(self,iband):
+        '''
+        calculating sperical albedo
+        :param iband:
+        :return:
+        '''
+        pass
 
 class RayleighCalculator():
     '''

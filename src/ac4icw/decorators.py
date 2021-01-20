@@ -8,7 +8,8 @@ dic_method = {
     'extract_f0':'Extracting extraterritaril irradiance for current sensor',
     'RayleighSixS.cal_reflectance':'Calculating rayleigh reflectance and transmittance',
     'GasSixS.cal_trans_up':'Calculating gas absorption transmittance',
-    'StandardAtmCorrection.Run':'Standard atmospheric correction processing'
+    'StandardAtmCorrection.Run':'Standard atmospheric correction processing',
+    'PathacAtmCorrection.Run':'Standard atmospheric correction processing'
 }
 
 def processing_info(func,message=None):

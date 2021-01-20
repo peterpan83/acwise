@@ -125,31 +125,39 @@ class L1_WISE(Level1_Base):
 
         super().setSensorAltitude(int(round(fl.height / 1000.0)))
         super().setGroundAltitude(0)
-        _logger.info("Calculating {} equvilent F0...".format(self.sensor))
-        self.extract_f0()
+
+        f0_file = kwargs['F0'] if 'F0' in kwargs else None
+        self.extract_f0(f0_file)
         _logger.info("Calculating solar zenith...")
         super().cal_solar_geo()
         # _logger.info('Setting water mask...')
         # super().setWaterMask()
 
-
-    def extract_f0(self):
+    def extract_f0(self,specific_file=None):
         '''
         implement the abstract method of getF0
         :return:
         '''
-        _waves,_f0,unit = loadF0(data_dir=self.data_dir)
-        _f0_c = calF0Ext(_f0,self.acq_time_local)
-        resolution, wrange = 0.01, (_waves[0],_waves[-1]+0.0001)
+        if specific_file is None:
+            _logger.info("Calculating {} equvilent F0...".format(self.sensor))
+            _waves,_f0,unit = loadF0(data_dir=self.data_dir)
+            _f0_c = calF0Ext(_f0,self.acq_time_local)
+            resolution, wrange = 0.01, (_waves[0],_waves[-1]+0.0001)
 
-        _f0_c_fine = intp.interp1d(_waves,_f0_c)(np.arange(wrange[0],wrange[1],resolution))
+            _f0_c_fine = intp.interp1d(_waves,_f0_c)(np.arange(wrange[0],wrange[1],resolution))
 
-        rsr, x = FWMH2RSR(self.FWHM, self.bandwaves, wrange=wrange, resolution=resolution)
-        f0_wise = np.zeros_like(self.bandwaves,dtype=np.float)
-        for i,item in enumerate(rsr):
-            f0_wise[i] =np.sum(_f0_c_fine*item)/np.sum(item)
-        self.F0['values'] = f0_wise
-        self.F0['unit'] = unit
+            rsr, x = FWMH2RSR(self.FWHM, self.bandwaves, wrange=wrange, resolution=resolution)
+            f0_wise = np.zeros_like(self.bandwaves,dtype=np.float)
+            for i,item in enumerate(rsr):
+                f0_wise[i] =np.sum(_f0_c_fine*item)/np.sum(item)
+            self.F0['values'] = f0_wise
+            self.F0['unit'] = unit
+        else:
+            _logger.info("Loading F0 of {} from {}".format(self.sensor,specific_file))
+            _waves, _f0, unit = loadF0(data_dir=self.data_dir,sensor=str.upper(self.sensor),name='F0_6SV')
+            self.F0['values'] = _f0
+            self.F0['unit'] = unit
+            _logger.debug("loading F0 finished....")
 
 
     # def calSolarGeometry(self):

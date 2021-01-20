@@ -72,8 +72,6 @@ class AerosolAlgorithm():
         return self._aot,self._aerosol_type,self._aot_wavelength
 
 
-
-
 class AerosolDSF(AerosolAlgorithm):
     __AEROSOL_REFLECTANCE_MIN = 1E-5
 

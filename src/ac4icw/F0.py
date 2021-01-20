@@ -4,31 +4,40 @@ from datetime import datetime
 import scipy.interpolate as intp
 import pandas as pd
 
-def loadF0(data_dir,name='Thuillier_2002'):
+
+def loadF0(data_dir,sensor=None,name='Thuillier_2002'):
     '''
     read F0 at averaged sun-earth distance
     :param name: file name
     :return: F0
     '''
-    data_shared_dir = os.path.join(data_dir,'shared')
-    f0_path = os.path.join(data_shared_dir,'F0_{}.txt'.format(name))
-    units,waves,f0 = None, [],[]
-    if name=='Thuillier_2002':
-        flag = 0
-        with open(f0_path,'r',encoding='utf-8') as f:
-            lines = f.readlines()
-        for line in lines:
-            line = line.strip()
-            if line.startswith('/units'):
-                units = line.split(',')
-                continue
-            if line.startswith('/end_header'):
-                flag = 1
-                continue
-            if flag==1:
-                values = [float(v) for v in line.split(' ')]
-                waves.append(values[0])
-                f0.append(values[1]*0.001)  #convert mW/cm^2/um to mW/cm^2/nm
+    if sensor is None:
+        data_shared_dir = os.path.join(data_dir,'shared')
+        f0_path = os.path.join(data_shared_dir,'F0_{}.txt'.format(name))
+        units,waves,f0 = None, [],[]
+        if name=='Thuillier_2002':
+            flag = 0
+            with open(f0_path,'r',encoding='utf-8') as f:
+                lines = f.readlines()
+            for line in lines:
+                line = line.strip()
+                if line.startswith('/units'):
+                    units = line.split(',')
+                    continue
+                if line.startswith('/end_header'):
+                    flag = 1
+                    continue
+                if flag==1:
+                    values = [float(v) for v in line.split(' ')]
+                    waves.append(values[0])
+                    f0.append(values[1]*0.001)  #convert mW/cm^2/um to mW/cm^2/nm
+    else:
+        data_shared_dir = os.path.join(data_dir, 'LUTs',sensor)
+        # print(sensor)
+        if name == 'F0_6SV':
+            values = np.loadtxt(os.path.join(data_shared_dir,name+'.txt'), skiprows=2)
+            waves,f0 = values[:,0],values[:,1]*0.0001 # convert from W/m2/mic2 to mW/cm^2/nm
+
     return np.asarray(waves),np.asarray(f0),'mW/cm^2/nm'
     # with open(os.path)
 

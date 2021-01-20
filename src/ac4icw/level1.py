@@ -291,7 +291,7 @@ class Level1_Base():
         pass
 
     @abstractmethod
-    def extractF0(self):
+    def extract_f0(self,specific_file=None):
         pass
 
     @abstractmethod
