@@ -72,6 +72,48 @@ class PathAlgorithm():
         return self._aot,self._aerosol_type,self._aot_wavelength
 
 
+class PathBLACKSPECTRA(PathAlgorithm):
+    def __init__(self,sensor,**kwargs):
+        _logger.info("Initializing Path BLACKSPECTRA algorithm...")
+        super().__init__()
+        self.black_spectra = {}
+
+        if 'path_cal' not in kwargs:
+            raise Exception()
+        if 'AERO_INDEX' not in kwargs:
+            raise Exception()
+
+        if not issubclass(kwargs['path_cal'],PathCalculator):
+            raise Exception()
+
+        # Instantiate AerosolCalculator
+        self._path_cal = kwargs['path_cal'](sensor,**kwargs)
+
+        if 'AOT_550' not in kwargs:
+            raise Exception
+        self._aot = float(kwargs['AOT_550'])
+        self._aerosol_type = int(kwargs['AERO_INDEX'])
+
+    def push_rhot(self,iBandIndex,rhot:np.ndarray):
+        m = rhot[rhot>0.0]
+        m.sort()
+        # _min = rhot[rhot>0.0].min()
+        _min = m[200000]-(m[400000]-m[200000])  ## just use very simple linear fitting
+        if iBandIndex not in self.black_spectra:
+            self.black_spectra[iBandIndex] = [_min]
+        else:
+            self.black_spectra[iBandIndex].append(_min)
+
+    def get_results(self, iBandIndex=0):
+        aerosol_type = 2 if self._aerosol_type is None else self._aerosol_type
+        taua = 0.005 if self._aot is None else self._aot
+        rhop_t = min(self.black_spectra[iBandIndex])
+        # logging.info("black pixel:{}----{}".format(iBandIndex,rhop_t))
+        albeo = self._path_cal.cal_spherical_albedo(iband=iBandIndex, aerosol_type=aerosol_type, taua=taua)
+        trans_up = self._path_cal.cal_trans_up(iband=iBandIndex, senz=self._senz, aerosol_type=aerosol_type, taua=taua)
+        trans_down = self._path_cal.cal_trans_down(iband=iBandIndex, solz=self._solz, aerosol_type=aerosol_type,
+                                                   taua=taua)
+        return (rhop_t, albeo, trans_up, trans_down)
 
 
 class PathFIXAEROSOL(PathAlgorithm):

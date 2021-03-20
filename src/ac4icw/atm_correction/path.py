@@ -138,6 +138,10 @@ class PathSixS(PathCalculator):
         solz_c[solz_c > self.solz_lut.max()] = self.solz_lut.max()
         phi_c[phi_c > self.phi_lut.max()] = self.phi_lut.max()
 
+        senz_c[senz_c < self.vewz_lut.min()] = self.vewz_lut.min()
+        solz_c[solz_c < self.solz_lut.min()] = self.solz_lut.min()
+        phi_c[phi_c < self.phi_lut.min()] = self.phi_lut.min()
+
         rhop_lut = self.dic_values[aerosol_type][1]
 
         xi = np.hstack([np.full((senz_c.size, 1), taua, np.float),

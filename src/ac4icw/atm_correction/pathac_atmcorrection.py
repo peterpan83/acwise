@@ -147,7 +147,7 @@ class PathacAtmCorrection(AtmCorrectionInterface):
             try:
                 for i, wave in tqdm(enumerate(self._level_1.bandwaves), desc='Processing Band'):
                     trans_g_up = get_gas_trans_up(i)
-                    trans_g_down = get_gas_trans_down(i)
+                    # trans_g_down = get_gas_trans_down(i)
 
                     rhot = self._level_1.getRhotBand(i,tile=tile)
 
@@ -158,7 +158,7 @@ class PathacAtmCorrection(AtmCorrectionInterface):
                     rhot_gc.tofile(os.path.join(self.__out_dir, "rhot_gc_{}_{}".format(itile, i)))
                     path_retrival_push(i,rhot_gc)
 
-                    del trans_g_up,trans_g_down
+                    del trans_g_up
 
                 path_retrive()
                 path_clear()
