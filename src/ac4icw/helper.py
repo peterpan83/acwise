@@ -10,6 +10,12 @@ from timezonefinder import TimezoneFinder
 import pendulum
 import pandas as pd
 import configparser
+import rasterio
+import matplotlib.pyplot as plt
+from skimage import exposure
+
+
+
 
 BADVALUE = -999
 
@@ -272,5 +278,25 @@ def findLocalTimeZone(longitude,latitude):
     tz = pendulum.timezone(timezone_local_name)
     return tz
 #-----------------------------------TIME ZONE-----------------------------------------------#
+
+
+def showRGB_L2(l2path,validmask=None):
+    l2 = rasterio.open(l2path)
+    R = l2.read(64)*1e-4
+    G = l2.read(44)*1e-4
+    B = l2.read(23)*1e-4
+    RGBdata = np.zeros((R.shape[0], R.shape[1], 3), dtype=np.float)
+    RGBdata[:, :, 0] = R
+    RGBdata[:, :, 1] = G
+    RGBdata[:, :, 2] = B
+    def adjust_gamma(img):
+        corrected = exposure.adjust_gamma(img, 0.3)
+        return corrected
+    dst = adjust_gamma(RGBdata)
+    dst[~validmask] = 1.0
+    # dst = RGBdata
+    plt.imshow(dst)
+    plt.show()
+
 
 

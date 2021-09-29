@@ -165,14 +165,20 @@ class Level1_Base():
         Rdata_a = self.getRhotBand(bandindex=self.__red_band_index,tile=tile)
         Gdata_a = self.getRhotBand(bandindex=self.__green_band_index,tile=tile)
         Bdata_a = self.getRhotBand(bandindex=self.__blue_band_index,tile=tile)
+
+        y_ticks,x_ticks = list(range(0,self.nrows,1000)),list(range(0,self.ncols,1000))
+        cor_x, cor_y = transform_xy(self.affine, rows=y_ticks, cols=x_ticks)
         
         RGBdata = np.zeros((Rdata_a.shape[0],Rdata_a.shape[1],3),dtype=np.float)
         RGBdata[:,:,0] = Rdata_a
         RGBdata[:, :, 1] = Gdata_a
         RGBdata[:, :, 2] = Bdata_a
         dst = adjust_gamma(RGBdata)
+        dst[~self.__valid_mask] = 1.0
         # dst = RGBdata
         plt.imshow(dst)
+        plt.xticks(ticks=x_ticks,labels=cor_x)
+        plt.yticks(ticks=y_ticks, labels=cor_y,rotation=90)
         plt.show()
 
 
@@ -325,12 +331,12 @@ class Level1_Base():
         # unit: uW/cm-2 sr-1 / nm * 1000
         Lt = self.read_band(bandindex,tile)
         # unit (f0): mW/cm^2/um
-        assert Lt.shape == (tile.ysize,tile.xsize)
+        # assert Lt.shape == (tile.ysize,tile.xsize)
         if tile:
             sz = self.solar_zenith[tile[0]:tile[1], tile[2]:tile[3]]
         else:
             sz = self.solar_zenith
-        assert sz.shape==(tile.ysize,tile.xsize)
+        # assert sz.shape==(tile.ysize,tile.xsize)
         return np.pi * Lt / (self.F0['values'][bandindex] * np.cos(np.deg2rad(sz)))
 
     def getRhotSpectrum(self, iline, isample):

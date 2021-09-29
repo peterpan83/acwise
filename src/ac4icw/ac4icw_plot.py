@@ -42,6 +42,7 @@ from ac4icw.helper import covert_config_to_dic
 from ac4icw.helper import createInstance
 from ac4icw.helper import getClass
 from ac4icw.tile import Tile
+from ac4icw.helper import showRGB_L2
 
 if os.path.exists('presentation.mplstyle'):
     plt.style.use('presentation.mplstyle')
@@ -171,6 +172,49 @@ class Image(cli.Application):
             image = rhot
 
         plot_image(image,title=title,watermask=water_mask)
+
+@ACPlot.subcommand("RGB")
+class Crgb(cli.Application):
+    PROGNAME = colors.green
+    VERSION = colors.blue | "1.0"
+    COLOR_GROUPS = {"Meta-switches" : colors.bold & colors.yellow}
+    show_l2 = cli.Flag(["ll", "level2"], help="show RGB of l2")
+
+    @cli.switch(["-c"],str,mandatory=True,help="config.ini file that runs the AC program")
+    def config_file(self,config_f):
+        self._config_f = config_f
+        if not os.path.exists(config_f):
+            print("{} does not exsit!".format(config_f))
+            sys.exit(-1)
+        config = configparser.ConfigParser()
+        config.read(config_f)
+        config_dic = covert_config_to_dic(config)
+        self._config_dic = config_dic
+
+
+
+    def main(self):
+        config_dic = self._config_dic
+        level_1 = build_level1(config_dic)
+        level_1.cal_water_mask()
+        level_1.cal_viewing_geo()
+        level_1.cal_phi()
+
+        if self.show_l2:
+            __dir = config_dic['OUTPUT']['DIR']
+            l1name = config_dic['WISE']['IMAGE_NAME']
+            l2name = os.path.join(__dir,config_dic['OUTPUT']['NAME'].replace('$NAME$',l1name),
+                                  config_dic['OUTPUT']['NAME'].replace('$NAME$',l1name)+'.tif')
+
+            showRGB_L2(l2name,validmask=level_1.get_valid_mask())
+
+        else:
+            level_1.show_rgb()
+
+
+
+
+
 
 @ACPlot.subcommand("spectrum")
 class Spectrum(cli.Application):
