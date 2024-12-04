@@ -1,6 +1,10 @@
-
+import os
 import numpy as np
-import gdal,os
+try:
+    import gdal
+except:
+    from osgeo import gdal
+
 import spectral.io.envi as envi
 from spectral.io.envi import FileNotAnEnviHeader
 import pendulum
